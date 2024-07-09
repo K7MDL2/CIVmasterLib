@@ -13,10 +13,12 @@
 // command "body" of the CIV commands currently in use
 
 constexpr uint8_t CIV_C_F_SEND[] 			= {1,0x00};                 // send operating frequency to all
-constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
+constexpr uint8_t CIV_C_F1_SEND[] 		= {1,0x05};                 // send operating frequency to one
+constexpr uint8_t CIV_C_F_READ[] 		  = {1,0x03};                 // read operating frequency
 
-constexpr uint8_t CIV_C_F_READ[] 			= {1,0x03};                 // read operating frequency
-constexpr uint8_t CIV_C_MOD_READ[] 		= {1,0x04};               	// read Modulation Mode in use
+constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
+constexpr uint8_t CIV_C_MOD1_SEND[] 	= {1,0x06};                 // send Modulation Mode to one
+constexpr uint8_t CIV_C_MOD_READ[] 	  = {1,0x04};               	// read Modulation Mode in use
 
 constexpr uint8_t CIV_C_RF_POW[]      = {2,0x14,0x0A};            // send / read max RF power setting (0..255 == 0 .. 100%)
 

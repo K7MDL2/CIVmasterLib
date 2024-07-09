@@ -2,8 +2,8 @@
 	CIVmaster.cpp - Library for communication via ICOM's CI-V bus and/or Bluetooth
 	Created by Wilfried Dilling, DK8RW, May 04, 2022
 	Released into the public domain
+	Modified for Teensy4 and IC-905 K7MDL July 2024
 */
-
 
 #include <Arduino.h>
 
@@ -17,9 +17,13 @@
 #elif defined (useSerial_2)
 	#define CIV_SERIAL Serial2
 	BluetoothSerial CIV_BTSER;
+#elif defined (useUSBHostSerial_A)
+	#define PC_Debug_port Serial
+	#define PC_CAT_port SerialUSB1
+	#define PC_GPS_port SerialUSB2
+	//#define CIV_SERIAL userial(myusb, 1);
+	#define USBBAUD 115200   // RS-HFIQ uses 57600 baud
 #endif
-
-
 
 //ctor = constructor
 CIV::CIV()
@@ -28,12 +32,34 @@ CIV::CIV()
 	CIVresultBufIdx = 0; // CIVresultBuf is empty, "idx" points to first empty buffer element
 	for (idx=0;idx<knownAddrListSize;idx++)	// no valid address registered yet
 		knownAddress[idx] = CIV_ADDR_NONE;
-	
 }
 
 //------------------------------------------------------------------------
 // public methods
 
+	USBHost myusb;
+	USBHub hub1(myusb);
+	USBHub hub2(myusb);
+	USBHIDParser hid1(myusb);
+	USBHIDParser hid2(myusb);
+	// There are now two versions of the USBSerial class, that are both derived from a common Base class
+	// The difference is on how large of transfers that it can handle.  This is controlled by
+	// the device descriptor, where up to now we handled those up to 64 byte USB transfers.
+	// But there are now new devices that support larger transfer like 512 bytes.  This for example
+	// includes the Teensy 4.x boards.  For these we need the big buffer version. 
+	// uncomment one of the following defines for userial
+	//USBSerial userial(myusb);  // works only for those Serial devices who transfer <=64 bytes (like T3.x, FTDI...)
+	//USBSerial userial1(myusb);  // works only for those Serial devices who transfer <=64 bytes (like T3.x, FTDI...)
+	//USBSerial_BigBuffer userial(myusb, 1); // Handles anything up to 512 bytes
+	USBSerial_BigBuffer CIV_SERIAL(myusb, 1); // Handles anything up to 512 bytes
+	USBSerial_BigBuffer userial1(myusb, 1); // Handles anything up to 512 bytes
+	//USBSerial_BigBuffer userial(myusb); // Handles up to 512 but by default only for those > 64 bytes
+	//USBSerial_BigBuffer userial1(myusb); // Handles up to 512 but by default only for those > 64 bytes
+
+	USBDriver *drivers[] = {&hub1, &hub2, &hid1, &hid2, &CIV_SERIAL, &userial1};
+	
+	const char * driver_names[CNT_DEVICES] = {"Hub1", "Hub2",  "HID1", "HID2", "CIV_SERIAL", "USERIAL1" };
+	bool driver_active[CNT_DEVICES] = {false, false, false, false};
 
 //::::::::: initialize the HW /Interfaces
 void CIV::setupp(bool ESP_BT, String BTname) {
@@ -67,14 +93,28 @@ void CIV::setupp(bool ESP_BT) {
 		CIV_SERIAL.begin(CIV_BAUDRATE);
 		CIV_SERIAL.setTimeout(UART_TIMEOUT);
 	}
+}
 
+void CIV::setupp(bool TEENSY, bool ESP_BT, String BTname) {
+	
+	_ESP_BT = false;										// initialize Altsoftserial, Serial1 or Serial2
+	start_USB_Host();
+	CIV_SERIAL.begin(CIV_BAUDRATE);
+	CIV_SERIAL.setTimeout(UART_TIMEOUT);
+	#ifdef GPS
+		PC_GPS_port.begin(9600);
+		PC_GPS_port.flush();
+	#endif
+	PC_CAT_port.begin(115200);
+	PC_CAT_port.flush();
+	
 }
 
 void CIV::setupp() {
 
-		_ESP_BT = false;										// initialize Altsoftserial, Serial1 or Serial2
-		CIV_SERIAL.begin(CIV_BAUDRATE);
-		CIV_SERIAL.setTimeout(UART_TIMEOUT);
+	_ESP_BT = false;										// initialize Altsoftserial, Serial1 or Serial2
+	CIV_SERIAL.begin(CIV_BAUDRATE);
+	CIV_SERIAL.setTimeout(UART_TIMEOUT);
 
 }
 
@@ -84,46 +124,42 @@ bool CIV::isAddrKnown(const uint8_t deviceAddr) {
 
 //	Serial.print ("A:"); Serial.println (deviceAddr, HEX);
 
-
 	for (idx=0;idx < knownAddrListSize;idx++)
 		if (knownAddress[idx]==deviceAddr)	break;				// deviceAddr known ?
 
-///	Serial.print ("idx:");Serial.println (idx, HEX);
+//	Serial.print ("idx:");Serial.println (idx, HEX);
 
 	if (idx < knownAddrListSize)	return true;					// deviceAddr known !
 	else													return false;
 
 }
 
-
 //::::::::::::: make a specific CIV address known to CIV
 void	CIV::registerAddr(const uint8_t deviceAddr) {
 	uint8_t idx;
 	
-	if (!isAddrKnown(deviceAddr)) {											// deviceAddr not known yet -> add
+	if (!isAddrKnown(deviceAddr)) {							// deviceAddr not known yet -> add
 		for (idx=0;idx < knownAddrListSize;idx++) {			// search for empty space
 			if (knownAddress[idx]==CIV_ADDR_NONE)	break;	// empty space available
 		}
 		if (idx<knownAddrListSize)	knownAddress[idx]=deviceAddr;	// -> store
 	}
 
-//	Serial.print(knownAddress[0],HEX);
-//	Serial.print(knownAddress[1],HEX);
-//	Serial.println(knownAddress[2],HEX);
+	//	Serial.print(knownAddress[0],HEX);
+	//	Serial.print(knownAddress[1],HEX);
+	//	Serial.println(knownAddress[2],HEX);
 
 }
-
 
 //::::::::::::: remove a specific CIV address from the known address list
 void	CIV::unregisterAddr(const uint8_t deviceAddr) {
 	uint8_t idx;
 
 	for (idx=0;idx < knownAddrListSize;idx++)
-		if (knownAddress[idx]==deviceAddr)	break;				// deviceAddr known ?
-	if (idx<knownAddrListSize) {												// deviceAddr known -> remove
- 	 knownAddress[idx]=CIV_ADDR_NONE;
-	}
-
+		if (knownAddress[idx]==deviceAddr)	
+			break;				// deviceAddr known ?
+	if (idx<knownAddrListSize)								// deviceAddr known -> remove
+ 	 	knownAddress[idx]=CIV_ADDR_NONE;
 }
 
 //::::::::: read data in a Multi Radio System (two or three devices connected to CI-V-bus)
@@ -132,51 +168,48 @@ CIVresult_t CIV::readMsg(const uint8_t deviceAddr) {
   CIVresult_t CIVresultL;
 	uint8_t idx;
 
-	
 	// check and read buffer
 	for (idx=0;idx<CIVresultBufIdx;idx++) {						// first, check the buffer for a proper message
-		if (CIVresultBuf[idx].address==deviceAddr) {		// message from requested device found
+		if (CIVresultBuf[idx].address==deviceAddr) {			// message from requested device found
 
-			CIVresultL = CIVresultBuf[idx];								// get message from buffer
+			CIVresultL = CIVresultBuf[idx];						// get message from buffer
 
 			for ( ;(idx+1)<CIVresultBufIdx;idx++) {				// close the gap in the buffer list
 				CIVresultBuf[idx]=CIVresultBuf[idx+1];
 			}
 			if (CIVresultBufIdx>0) CIVresultBufIdx--;
 			
-			return CIVresultL;														// return result -> done for now
+			return CIVresultL;									// return result -> done for now
 		}
 	}
 
 	// check and read HW-CIVBus (if possible)
-	if  (CIVresultBufIdx < CIVresultBufSize) {				// static buffer could store a new result, if required
-																										// i.e. "buffer not full"
-		CIVresultL = readMsgRaw();													// -> check the HW for a new message
+	if  (CIVresultBufIdx < CIVresultBufSize) {					// static buffer could store a new result, if required
+																// i.e. "buffer not full"
+		CIVresultL = readMsgRaw();								// -> check the HW for a new message
 
-		if (CIVresultL.retVal<=CIV_NOK) {								// valid message received, "CIV_NO_MSG" will be discarded
-			if (CIVresultL.address==deviceAddr) {					// got it - the correct device has answered
-				return CIVresultL;													// return result -> done for now
+		if (CIVresultL.retVal<=CIV_NOK) {						// valid message received, "CIV_NO_MSG" will be discarded
+			if (CIVresultL.address==deviceAddr) {				// got it - the correct device has answered
+				return CIVresultL;								// return result -> done for now
 			}
 			else {
-				if (isAddrKnown(deviceAddr)) {							// deviceAddr known ?!
+				if (isAddrKnown(deviceAddr)) {					// deviceAddr known ?!
 					CIVresultBuf[CIVresultBufIdx]=CIVresultL;	// store the new result into the buffer
-					CIVresultBufIdx++;												// points to the next empty element
+					CIVresultBufIdx++;							// points to the next empty element
 				}
 			}
 		}
 	}
 
-	CIVresultL.retVal 		= CIV_NO_MSG;									// nothing valid received from the correct device
-	CIVresultL.address 	= CIV_ADDR_NONE;							// this may happen also in the case of "buffer full"
-	CIVresultL.cmd[0]=0;
-	CIVresultL.datafield[0]=0;
-	CIVresultL.value=0;
+	CIVresultL.retVal 		= CIV_NO_MSG;						// nothing valid received from the correct device
+	CIVresultL.address 		= CIV_ADDR_NONE;					// this may happen also in the case of "buffer full"
+	CIVresultL.cmd[0]		= 0;
+	CIVresultL.datafield[0]	= 0;
+	CIVresultL.value		= 0;
 
-	return CIVresultL;																// return result
-
+	return CIVresultL;											// return result
 }
 
-  
 //::::::::: 
 CIVresult_t CIV::readMsgRaw() {
 
@@ -186,31 +219,31 @@ CIVresult_t CIV::readMsgRaw() {
 
 	uint8_t	inByte; 
 	uint16_t lpCounter = 0; 
-  CIV_State_t CIV_State;
+	CIV_State_t CIV_State;
 
-  uint8_t idx;
-  uint8_t DstartIdx;
-  uint8_t DstopIdx;
-  unsigned long mul = 1;
+	uint8_t idx;
+	uint8_t DstartIdx;
+	uint8_t DstopIdx;
+	uint64_t mul = 1;
 
-// length of Cmd + Subcommands; 
-// default: 1; if the command is in this list: 2
-// 0x1A may have 4 bytes (if cmd is 0x1A+0x05). This has to be covered extra in source code, since this is
-// currently (Jan 2021) the only 4 byte command ...
+	// length of Cmd + Subcommands; 
+	// default: 1; if the command is in this list: 2
+	// 0x1A may have 4 bytes (if cmd is 0x1A+0x05). This has to be covered extra in source code, since this is
+	// currently (Jan 2021) the only 4 byte command ...
 
-//   constexpr uint8_t CIV_C_LENGTH_2[]  {0x07,0x0E,0x13,0x14,0x15,0x16,0x19,0x1A,0x1B,0x1C,0x1E,0x21,0x27};
-// table moved to CIVcmds.h !!! 
+	//   constexpr uint8_t CIV_C_LENGTH_2[]  {0x07,0x0E,0x13,0x14,0x15,0x16,0x19,0x1A,0x1B,0x1C,0x1E,0x21,0x27};
+	// table moved to CIVcmds.h !!! 
 	
-  CIVresult_t CIVresultL;
+  	CIVresult_t CIVresultL;
 
 
-  CIVresultL.retVal       = CIV_OK;
-  CIVresultL.address      = CIV_ADDR_NONE;
-  CIVresultL.cmd[0]       = 0;
-  CIVresultL.datafield[0] = 0;
-  CIVresultL.value        = 0;
+	CIVresultL.retVal       = CIV_OK;
+	CIVresultL.address      = CIV_ADDR_NONE;
+	CIVresultL.cmd[0]       = 0;
+	CIVresultL.datafield[0] = 0;
+	CIVresultL.value        = 0;
 
-  #ifdef debugWithoutRadio
+	#ifdef debugWithoutRadio
 
     uint8_t idx;
     // various test patterns
@@ -220,7 +253,7 @@ CIVresult_t CIV::readMsgRaw() {
 
 		for (idx=0; idx<=rxBufDummy[0];idx++) rxBuffer[idx]=rxBufDummy[idx];
   
-  #else
+  	#else
 		// quickcheck, whether something has been received
 		if (serAvailable()==0) {CIVresultL.retVal = CIV_NO_MSG; return CIVresultL;}
 
@@ -234,6 +267,9 @@ CIVresult_t CIV::readMsgRaw() {
 
 			if (serAvailable()>0) {
 				inByte = serRead();
+
+				PC_CAT_port.write(inByte);  // pass through to PC if connected for apps like WSJTX
+
 				switch (CIV_State) {
 			
 					case CIV_idle:
@@ -323,7 +359,7 @@ CIVresult_t CIV::readMsgRaw() {
     mul = 1; CIVresultL.value = 0;                          // load value of result
 
     if ((DstopIdx-DstartIdx)==0)  {                         // 1 byte data
-      CIVresultL.value = (unsigned long)rxBuffer[DstartIdx];
+      CIVresultL.value = (uint64_t)rxBuffer[DstartIdx];
     }
  
     if ((DstopIdx-DstartIdx)==1)  {                         // 2 byte data -> first byte is of highest order
@@ -334,6 +370,13 @@ CIVresult_t CIV::readMsgRaw() {
     }
   
     if ((DstopIdx-DstartIdx) == 4){                         // 5 byte data -> first byte is of lowest order
+      for (idx = DstartIdx; idx <= DstopIdx; idx++) {
+        CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
+        CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;
+      }
+    }
+
+	if ((DstopIdx-DstartIdx) == 5){                         // 6 byte data -> first byte is of lowest order - for 905 10G and up bands
       for (idx = DstartIdx; idx <= DstopIdx; idx++) {
         CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
         CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;
@@ -364,41 +407,39 @@ CIVresult_t CIV::writeMsg (const uint8_t deviceAddr, const uint8_t cmd_body[], c
 //                  approx.   5ms without ack from the radio
 //                  approx.  10ms when bus is shortcut
 
-
 	uint8_t idx; uint8_t waitCounter;
 
-  uint8_t txBuffer[CIV_TXBUFFERSIZE];
+	uint8_t txBuffer[CIV_TXBUFFERSIZE];
 
+	CIVresult_t CIVresultL;
 
-  CIVresult_t CIVresultL;
-
-  CIVresultL.retVal     	= CIV_OK;
+	CIVresultL.retVal     	= CIV_OK;
 
 	CIVresultL.address			= deviceAddr;
 	CIVresultL.cmd[0] 			= 0;
-  for (idx=1; idx<=cmd_body[0];idx++) {           // command body into CIVresultL
-    CIVresultL.cmd[0]++; CIVresultL.cmd[CIVresultL.cmd[0]] = cmd_body[idx];}
+	for (idx=1; idx<=cmd_body[0];idx++) {           // command body into CIVresultL
+		CIVresultL.cmd[0]++; CIVresultL.cmd[CIVresultL.cmd[0]] = cmd_body[idx];}
 
-	CIVresultL.datafield[0] = 0;
-  for (idx=1; idx<=cmd_data[0];idx++) {           // data part into CIVresultL
-    CIVresultL.datafield[0]++; CIVresultL.datafield[CIVresultL.datafield[0]] = cmd_data[idx];}
+		CIVresultL.datafield[0] = 0;
+	for (idx=1; idx<=cmd_data[0];idx++) {           // data part into CIVresultL
+		CIVresultL.datafield[0]++; CIVresultL.datafield[CIVresultL.datafield[0]] = cmd_data[idx];}
 
-  CIVresultL.value        = 0;										// value will NOT! be set in writeMsg
+	CIVresultL.value        = 0;										// value will NOT! be set in writeMsg
 
-  //............. build the complete command and write to txBuffer
+	//............. build the complete command and write to txBuffer
 
-  txBuffer[1] = C_START;txBuffer[2] = C_START;		// preamble into buffer
-  txBuffer[3] = deviceAddr;
-  txBuffer[4] = CIV_ADDR_MASTER;
-  txBuffer[0] = 4;                      					// length of data in use
+	txBuffer[1] = C_START;txBuffer[2] = C_START;		// preamble into buffer
+	txBuffer[3] = deviceAddr;
+	txBuffer[4] = CIV_ADDR_MASTER;
+	txBuffer[0] = 4;                      					// length of data in use
 
-  for (idx=1; idx<=cmd_body[0];idx++) {       		// command body into buffer
-    txBuffer[0]++; txBuffer[txBuffer[0]] = cmd_body[idx];}
+	for (idx=1; idx<=cmd_body[0];idx++) {       		// command body into buffer
+		txBuffer[0]++; txBuffer[txBuffer[0]] = cmd_body[idx];}
 
-  for (idx=1; idx<=cmd_data[0];idx++) {       		// data part into buffer
-    txBuffer[0]++; txBuffer[txBuffer[0]] = cmd_data[idx];}
+	for (idx=1; idx<=cmd_data[0];idx++) {       		// data part into buffer
+		txBuffer[0]++; txBuffer[txBuffer[0]] = cmd_data[idx];}
 
-  txBuffer[0]++; txBuffer[txBuffer[0]] = C_STOP;  // postamble into buffer
+	txBuffer[0]++; txBuffer[txBuffer[0]] = C_STOP;  // postamble into buffer
 
 
 	//.............	let's get access to the CIV bus and write the command
@@ -409,40 +450,40 @@ CIVresult_t CIV::writeMsg (const uint8_t deviceAddr, const uint8_t cmd_body[], c
 		    (CIVresultBuf[CIVresultBufIdx].retVal<=CIV_NOK))
 			CIVresultBufIdx++;												// points to the next empty element
 	}
-  if (serAvailable()>0) {                 	// still data to be read -> give up!
+  	if (serAvailable()>0) {                 	// still data to be read -> give up!
  	  CIVresultL.retVal=CIV_BUS_BUSY; 					// CIV bus is not available -> break
     logNewEntry(txBuffer,"CHK", CIVresultL.retVal); 
     return CIVresultL;
  	}
 
-  if (mode==CIV_wOn) {														// wakeup radio requested !
-    for (idx=0; idx<40;idx++) serWrite(C_START); 	// wakeup radio: (40)*C_START
-  }
+	if (mode==CIV_wOn) {														// wakeup radio requested !
+		for (idx=0; idx<40;idx++) serWrite(C_START); 	// wakeup radio: (40)*C_START
+	}
 
-	for (idx=1; idx<=txBuffer[0];idx++) {serWrite(txBuffer[idx]);}
+		for (idx=1; idx<=txBuffer[0];idx++) {serWrite(txBuffer[idx]);}
 
-  if (mode==CIV_wChk) {
+	if (mode==CIV_wChk) {
 
-    serflushOutput(); // wait, until the message really has been sent - this takes approx 5ms
+		serflushOutput(); // wait, until the message really has been sent - this takes approx 5ms
 
-	  //............. read the own command back, and check, whether the bytes were sent correctly
-	  // there must be the complete command exactly as sent available in the rxBuffer
+		//............. read the own command back, and check, whether the bytes were sent correctly
+		// there must be the complete command exactly as sent available in the rxBuffer
 
-    rxBuffer[0]=0; waitCounter = 0;
-    while ((rxBuffer[0]< txBuffer[0]) && (waitCounter<t_sendCmd)) { 
-      waitCounter++; delayMicroseconds (t_usLoop);
-      if (serAvailable()>0) {
-        rxBuffer[0]++; rxBuffer[rxBuffer[0]] = serRead();
-  		  // even if only one byte hasn't been sent correctly, the whole command is corrupted
-        if (rxBuffer[rxBuffer[0]]!=txBuffer[rxBuffer[0]]) CIVresultL.retVal = CIV_BUS_CONFLICT;
-      }
-    }
+		rxBuffer[0]=0; waitCounter = 0;
+		while ((rxBuffer[0]< txBuffer[0]) && (waitCounter<t_sendCmd)) { 
+			waitCounter++; delayMicroseconds (t_usLoop);
+			if (serAvailable()>0) {
+				rxBuffer[0]++; rxBuffer[rxBuffer[0]] = serRead();
+				// even if only one byte hasn't been sent correctly, the whole command is corrupted
+				if (rxBuffer[rxBuffer[0]]!=txBuffer[rxBuffer[0]]) CIVresultL.retVal = CIV_BUS_CONFLICT;
+			}
+		}
 
-    if (waitCounter>=t_sendCmd)            // CIV bus is shortcut -> break
-			{CIVresultL.retVal = CIV_HW_FAULT; logNewEntry(rxBuffer,"TX_S",CIVresultL.retVal); return CIVresultL;}
-		else
-			if (CIVresultL.retVal==CIV_BUS_CONFLICT)  			// CIV bus conflict -> break
-				{logNewEntry(rxBuffer,"TX_C",CIVresultL.retVal); return CIVresultL;}
+		if (waitCounter>=t_sendCmd)            // CIV bus is shortcut -> break
+				{CIVresultL.retVal = CIV_HW_FAULT; logNewEntry(rxBuffer,"TX_S",CIVresultL.retVal); return CIVresultL;}
+			else
+				if (CIVresultL.retVal==CIV_BUS_CONFLICT)  			// CIV bus conflict -> break
+					{logNewEntry(rxBuffer,"TX_C",CIVresultL.retVal); return CIVresultL;}
 
   } //(mode==CIV_wChk)
   
@@ -460,7 +501,6 @@ CIVresult_t CIV::writeMsg (const uint8_t deviceAddr, const uint8_t cmd_body[], c
   uint8_t CIV::logBufferState[logMaxEntries];
 	char CIV::logBufferName[logMaxEntries][logNameLength];
 #endif
-
 
 //.............
 void CIV::logClear() {
@@ -509,14 +549,14 @@ void CIV::logDisplayLine(uint8_t lineNo) {
   uint8_t idx;
  
 	for (idx=1;idx<=logBuffer[lineNo][0];idx++) {
-		Serial.print(".");
-		Serial.print(logBuffer[lineNo][idx],HEX);
+		PC_Debug_port.print(".");
+		PC_Debug_port.printf("%02X",logBuffer[lineNo][idx],HEX);  // remove HEX and change %2X to %2d to see the decimal equivalent
 	}
-	Serial.print(" : ");
-	Serial.print(logBufferName[lineNo]);
-  Serial.print(" * ");
-  Serial.print(logBufferState[lineNo]);
-	Serial.println("");
+	PC_Debug_port.print(" : ");
+	PC_Debug_port.print(logBufferName[lineNo]);
+	PC_Debug_port.print(" * ");
+	PC_Debug_port.print(logBufferState[lineNo]);
+	PC_Debug_port.println("");
 
 #endif // log_CIV
 
@@ -542,12 +582,11 @@ void CIV::logDisplay() {
 		logDisplayLine(entry_idx);
 		display_idx++;
 	}
-  if (display_idx>0) Serial.println("**");
+  if (display_idx>0) PC_Debug_port.println("**");
 
 #endif // log_CIV
 
 }
-
 
 //------------------------------------------------------------------------
 // private methods
@@ -606,6 +645,103 @@ void CIV::serflushOutput(){
 #endif
 
 }
+
+// Setup USB Host serial ports
+bool Proceed  = false; 
+
+void CIV::refresh_myUSB(void)
+	{
+    myusb.Task();
+    // Print out information about different devices.
+    for (uint8_t i = 0; i < CNT_DEVICES; i++) 
+    {
+        if (*drivers[i] != driver_active[i]) 
+        {
+            if (driver_active[i]) 
+            {
+                PC_Debug_port.printf("*** Device %s - disconnected ***\n", driver_names[i]);
+                driver_active[i] = false;
+                Proceed = false;
+            } 
+            else 
+            {
+                PC_Debug_port.printf("*** Device %s %x:%x - connected ***\n", driver_names[i], drivers[i]->idVendor(), drivers[i]->idProduct());
+                driver_active[i] = true;
+                Proceed = true;
+
+                const uint8_t *psz = drivers[i]->manufacturer();
+                if (psz && *psz) PC_Debug_port.printf("  manufacturer: %s\n", psz);
+                psz = drivers[i]->product();
+                if (psz && *psz) PC_Debug_port.printf("  product: %s\n", psz);
+                psz = drivers[i]->serialNumber();
+                if (psz && *psz) PC_Debug_port.printf("  Serial: %s\n", psz);
+
+                // If this is a new Serial device.
+                if (drivers[i] == &CIV_SERIAL) 
+                {
+                    // Lets try first outputting something to our USerial to see if it will go out...
+                    CIV_SERIAL.begin(USBBAUD);
+                }
+                if (drivers[i] == &userial1) 
+                {
+                    // Lets try first outputting something to our USerial to see if it will go out...
+                    userial1.begin(9600);
+                }
+            }
+        }
+    }
+}
+
+void CIV::start_USB_Host(void)
+{
+    myusb.begin();
+    delay(50);
+    PC_Debug_port.println("Waiting for USB device to register on USB Host port");
+    while (!Proceed)  // observed about 500ms required.
+    {
+        refresh_myUSB();   // wait until we have a valid USB 
+        //PC_Debug_port.print("Retry (500ms) = "); PC_Debug_port.println(counter++);
+        delay (500);
+    }
+    delay(1);  // about 1-2 seconds needed before RS-HFIQ ready to receive commands over USB
+    PC_Debug_port.println("Start of USB Host port Setup");
+}
+
+#ifdef GPS
+void CIV::readGPS(void)
+{
+    byte incomingByte_1 = 0;
+    // read the 905 GPS data on the 2nd virtual serial USB Host interface and pass it through to the PC at 9600baud
+    while (userial1.available() > 0) 
+    {
+      incomingByte_1 = userial1.read();   // read from USB Hos port RADIO GPS data 
+      PC_GPS_port.write(incomingByte_1);  // Pass thru to PC side
+      //PC_Debug_port.print("GPS: ");
+      //PC_Debug_port.printf("%c",incomingByte_1);
+    }
+}
+#endif
+
+void CIV::pass_CAT_msg_to_RADIO(void)
+{
+if (PC_CAT_port.available() > 0 )
+    {
+        byte ch = PC_CAT_port.read();
+        CIV_SERIAL.write(ch);
+    }
+}
+
+// This shoudl be done in teh readmsgraw function so that the band decoder wont miss anything or vs.
+//void CIV::pass_CAT_msg_to_PC(void)
+//{
+//if (CIV_SERIAL.available() > 0 )
+//    {
+//        byte ch = CIV_SERIAL.read();
+//        PC_CAT_port.write(ch);
+//    }
+//}
+
+
 
 //------------------------------------------------------------------------
 // private static variables
