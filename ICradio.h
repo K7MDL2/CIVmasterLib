@@ -34,6 +34,7 @@ enum radioType_t:uint8_t {
 	TypeIC7300,
 	TypeIC9700,
 	TypeIC705,
+  TypeIC905,
   TypeICnone
 };
 
@@ -120,7 +121,7 @@ public:
 	void 				setDateTime();
 
   //::::::::::::: get operating frequency of the radio
-	unsigned long getFrequency();
+	uint64_t getFrequency();
 
   //::::::::::::: get current Modulation Mode of the radio
 	radioModMode_t getModMode();
@@ -155,7 +156,7 @@ private:
 	bool						_DateTimeSent;
 	uint8_t					_fModQuery;
   
-  unsigned long   _frequency;
+  uint64_t   _frequency;
 	radioModMode_t	_modMode;
 	radioFilter_t		_modFilter;
 
