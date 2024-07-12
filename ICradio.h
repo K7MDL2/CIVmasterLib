@@ -61,7 +61,8 @@ enum radioModMode_t:uint8_t {
   MOD_WFM,
   MOD_CW_R,
   MOD_RTTY_R,
-	MOD_DV,
+	MOD_DV = 17,
+  MOD_ATV = 23,
   MOD_NDEF
 };
 
