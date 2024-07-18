@@ -315,7 +315,7 @@ extern CIV civ;
 	}
 
   //::::::::::::: get operating frequency of the radio
-	unsigned long ICradio::getFrequency() {
+	uint64_t ICradio::getFrequency() {
     return _frequency;
 	}
 

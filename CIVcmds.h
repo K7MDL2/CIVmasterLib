@@ -12,12 +12,28 @@
 
 // command "body" of the CIV commands currently in use
 
+constexpr uint8_t CIV_C_USB_D0_F2_SEND[] 			= {5,0x26,0x00,0x01,0x00,0x02};   // selected VFO; mod USB; Data OFF; RX_filter F2;
+constexpr uint8_t CIV_C_USB_D1_F2_SEND[] 			= {5,0x26,0x00,0x01,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
+constexpr uint8_t CIV_C_LSB_D0_F2_SEND[] 			= {5,0x26,0x00,0x00,0x00,0x02};   // selected VFO; mod USB; Data OFF; RX_filter F2;
+constexpr uint8_t CIV_C_LSB_D1_F2_SEND[] 			= {5,0x26,0x00,0x00,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
+constexpr uint8_t CIV_C_FM_D1_F1_SEND[] 			= {5,0x26,0x00,0x05,0x01,0x01};   // selected VFO; mod USB; Data ON; RX_filter F2;
+
+constexpr uint8_t CIV_C_MOD_SET[] 			= {3,0x26,0x00,0x01};   // selected VFO; mod USB; Data OFF; RX_filter F2;
+
 constexpr uint8_t CIV_C_F_SEND[] 			= {1,0x00};                 // send operating frequency to all
 constexpr uint8_t CIV_C_F1_SEND[] 		= {1,0x05};                 // send operating frequency to one
-constexpr uint8_t CIV_C_F_READ[] 		  = {1,0x03};                 // read operating frequency
+constexpr uint8_t CIV_C_F_READ[] 		= {1,0x03};                 // read operating frequency
+
+constexpr uint8_t CIV_C_F26_READ[] 		= {2,0x26,0x00};                 // read selected VFO f, m data, filt
+constexpr uint8_t CIV_C_F26_SEND[] 		= {2,0x26,0x00};                 // read selected vfo freq, mode, data, filter
+
+constexpr uint8_t CIV_C_F25A_SEND[]   = {2,0x25,0x00};  // read VFO A selected vfo freq, mode, data, filter
+constexpr uint8_t CIV_C_F25B_SEND[] 	= {2,0x25,0x01};  // read VFO B freq, mode, data, filter
 
 constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
 constexpr uint8_t CIV_C_MOD1_SEND[] 	= {1,0x06};                 // send Modulation Mode to one
+constexpr uint8_t CIV_C_MOD_USB_F1_SEND[] 	= {3,0x06,0x01,0x01};       // send USB Filter 1 
+constexpr uint8_t CIV_C_MOD_USB__SEND[] 	= {2,0x06,0x01};       // send USB Filter 1 
 constexpr uint8_t CIV_C_MOD_READ[] 	  = {1,0x04};               	// read Modulation Mode in use
 
 constexpr uint8_t CIV_C_RF_POW[]      = {2,0x14,0x0A};            // send / read max RF power setting (0..255 == 0 .. 100%)
