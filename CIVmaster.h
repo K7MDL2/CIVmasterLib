@@ -24,7 +24,7 @@
 // Requires access to the serial line,i.e. Serial communication via USB
 // has to be initialized in the main program
 
-//  #define log_CIV           // switch on logging (command-structured, in and out)
+  #define log_CIV           // switch on logging (command-structured, in and out)
 															// ringbuffer
 															
 //  #define debugWithoutRadio // if defined, no reaction of a radio is expected
