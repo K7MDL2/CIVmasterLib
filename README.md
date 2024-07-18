@@ -8,6 +8,11 @@ Version: 1.01
 
 Date: 05-05-2022
 
+
+Updated K7MDL July 2024 to add support for IC-905 with 5 and 10Ghz bands (work in progress).  This is used in my IC905 controller project.
+
+
+
 IMPORTANT: 
 I have kept the functions of the CIVmasterLib compatible to the CIVbusLib as much as possible!
 So, in theory, it should be possible to delete CIVbusLib and install CIVmasterLIB without change in your user programs (this has been tested as well, of course).
