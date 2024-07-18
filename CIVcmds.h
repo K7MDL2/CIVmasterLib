@@ -16,6 +16,12 @@ constexpr uint8_t CIV_C_F_SEND[] 			= {1,0x00};                 // send operatin
 constexpr uint8_t CIV_C_F1_SEND[] 		= {1,0x05};                 // send operating frequency to one
 constexpr uint8_t CIV_C_F_READ[] 		  = {1,0x03};                 // read operating frequency
 
+constexpr uint8_t CIV_C_F26_READ[] 		= {2,0x26,0x00};                 // read selected VFO f, m data, filt
+constexpr uint8_t CIV_C_F26_SEND[] 		= {2,0x26,0x00};                 // read selected vfo freq, mode, data, filter
+
+constexpr uint8_t CIV_C_F25A_SEND[]   = {2,0x25,0x00};  // read VFO A selected vfo freq, mode, data, filter
+constexpr uint8_t CIV_C_F25B_SEND[] 	= {2,0x25,0x01};  // read VFO B freq, mode, data, filter
+
 constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
 constexpr uint8_t CIV_C_MOD1_SEND[] 	= {1,0x06};                 // send Modulation Mode to one
 constexpr uint8_t CIV_C_MOD_READ[] 	  = {1,0x04};               	// read Modulation Mode in use
