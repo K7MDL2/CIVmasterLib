@@ -18,7 +18,7 @@ AfuCtrl_test - a_Defines.h
 
 #define BASELOOP_TICK 10 
 
-#define NUM_BANDS 7   /* Number of Bands (depending on the radio) */
+#define NUM_BANDS 24   /* Number of Bands (depending on the radio) */
 
 
 // some general defines ----------------------------------
