@@ -105,7 +105,7 @@ typedef struct {
   uint8_t  retVal;
   uint8_t  address;
   uint8_t  cmd[5];
-  uint8_t  datafield[12];
+  uint8_t  datafield[68];
   uint64_t value;
 } CIVresult_t;
 

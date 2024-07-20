@@ -369,14 +369,14 @@ CIVresult_t CIV::readMsgRaw() {
       }
     }
   
-    if ((DstopIdx-DstartIdx) == 4){                         // 5 byte data -> first byte is of lowest order
+    if ((DstopIdx-DstartIdx) > 3 && (DstopIdx-DstartIdx) < 6){                         // 5 byte data -> first byte is of lowest order
       for (idx = DstartIdx; idx <= DstopIdx; idx++) {
         CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
         CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;
       }
     }
 
-	if ((DstopIdx-DstartIdx) == 5){                         // 6 byte data -> first byte is of lowest order - for 905 10G and up bands
+	if ((DstopIdx-DstartIdx) > 5){                         // 6 byte data -> first byte is of lowest order - for 905 10G and up bands
       for (idx = DstartIdx; idx <= DstopIdx; idx++) {
         CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
         CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;

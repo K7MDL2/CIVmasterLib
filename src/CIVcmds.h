@@ -18,7 +18,24 @@ constexpr uint8_t CIV_C_LSB_D0_F2_SEND[] 			= {5,0x26,0x00,0x00,0x00,0x02};   //
 constexpr uint8_t CIV_C_LSB_D1_F2_SEND[] 			= {5,0x26,0x00,0x00,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
 constexpr uint8_t CIV_C_FM_D1_F1_SEND[] 			= {5,0x26,0x00,0x05,0x01,0x01};   // selected VFO; mod USB; Data ON; RX_filter F2;
 
-constexpr uint8_t CIV_C_MOD_SET[] 			= {3,0x26,0x00,0x01};   // cmd 26; selected VFO; mod USB;
+constexpr uint8_t CIV_C_MOD_SET[] 			= {5,0x26,0x00,0x01,0x00,0x01};   // cmd 26; selected VFO; mode, data on/off(0-1), filter (1-3);
+
+constexpr uint8_t CIV_C_ATTN_OFF_READ[] 	= {2,0x11,0x00};                 // Atten OFF
+constexpr uint8_t CIV_C_ATTN_ON_READ[] 		= {2,0x11,0x01};                 // Atten 10dB (144, 432, 1200 bands only)
+constexpr uint8_t CIV_C_SPLIT_OFF_READ[] 	= {2,0x0F,0x00};                 // read Split OFF
+constexpr uint8_t CIV_C_SPLIT_ON_READ[] 	= {2,0x0F,0x01};                 // read split ON
+constexpr uint8_t CIV_C_SPLIT_OFF_SEND[] 	= {2,0x0F,0x01};                 // set split OFF
+constexpr uint8_t CIV_C_SPLIT_ON_SEND[] 	= {2,0x0F,0x01};                 // Set split ON
+
+constexpr uint8_t CIV_C_RFGAIN[] 	  = {2,0x14,0x02};                 // send/read RF Gain
+constexpr uint8_t CIV_C_AFGAIN[] 	  = {2,0x14,0x01};                 // send/read AF Gain
+constexpr uint8_t CIV_C_RFPOWER[]   = {2,0x14,0x0A};                 // send/read selected bands RF power
+constexpr uint8_t CIV_C_S_MTR_LVL[] = {2,0x15,0x02};                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
+
+constexpr uint8_t CIV_C_PREAMP[] 	= {2,0x16,0x02};                 // send/read preamp 00 = OFF, 01 = ON
+constexpr uint8_t CIV_C_AGC[] 	  = {2,0x16,0x12};                 // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
+
+constexpr uint8_t CIV_C_CW_MSGS[] 	= {1,0x17};                 // Send CW messages see page 17 of prog manual for char table
 
 constexpr uint8_t CIV_C_F_SEND[] 			= {1,0x00};                 // send operating frequency to all
 constexpr uint8_t CIV_C_F1_SEND[] 		= {1,0x05};                 // send operating frequency to one
@@ -29,6 +46,11 @@ constexpr uint8_t CIV_C_F26_SEND[] 		= {2,0x26,0x00};                 // send se
 
 constexpr uint8_t CIV_C_F25A_SEND[]   = {2,0x25,0x00};  // read VFO A selected vfo freq, mode, data, filter
 constexpr uint8_t CIV_C_F25B_SEND[] 	= {2,0x25,0x01};  // read VFO B freq, mode, data, filter
+
+constexpr uint8_t CIV_C_BSTACK[] 	    = {2,0x1A,0x01};            // send/read BandStack contents - see page 19 of prog manual.  
+                                                                  // data byte 1 0xyy = Freq band code
+                                                                  // dat abyte 2 0xzz = register code 01, 02 or 03
+                                                                  // to read 432 band stack register 1 use 0x1A,0x01,0x02,0x01
 
 constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
 constexpr uint8_t CIV_C_MOD1_SEND[] 	= {1,0x06};                 // send Modulation Mode to one
