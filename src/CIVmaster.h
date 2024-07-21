@@ -270,7 +270,7 @@ public:
 	#ifdef log_CIV
 		#ifdef bigRamAv
 			#define logMaxEntries 40
-			#define logMsgLength  25
+			#define logMsgLength  36
 			#define logNameLength 5
 		#else
 			#define logMaxEntries 18
