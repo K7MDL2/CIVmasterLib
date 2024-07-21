@@ -11,70 +11,61 @@
 
 
 // command "body" of the CIV commands currently in use
-
-constexpr uint8_t CIV_C_USB_D0_F2_SEND[] 			= {5,0x26,0x00,0x01,0x00,0x02};   // selected VFO; mod USB; Data OFF; RX_filter F2;
-constexpr uint8_t CIV_C_USB_D1_F2_SEND[] 			= {5,0x26,0x00,0x01,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
-constexpr uint8_t CIV_C_LSB_D0_F2_SEND[] 			= {5,0x26,0x00,0x00,0x00,0x02};   // selected VFO; mod USB; Data OFF; RX_filter F2;
-constexpr uint8_t CIV_C_LSB_D1_F2_SEND[] 			= {5,0x26,0x00,0x00,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
-constexpr uint8_t CIV_C_FM_D1_F1_SEND[] 			= {5,0x26,0x00,0x05,0x01,0x01};   // selected VFO; mod USB; Data ON; RX_filter F2;
-
-constexpr uint8_t CIV_C_MOD_SET[] 			      = {5,0x26,0x00,0x01,0x00,0x01};   // cmd 26; selected VFO; mode, data on/off(0-1), filter (1-3);
-
-constexpr uint8_t CIV_C_ATTN_OFF_READ[] 	= {2,0x11,0x00};                 // Atten OFF
-constexpr uint8_t CIV_C_ATTN_ON_READ[] 		= {2,0x11,0x01};                 // Atten 10dB (144, 432, 1200 bands only)
-constexpr uint8_t CIV_C_SPLIT_OFF_READ[] 	= {2,0x0F,0x00};                 // read Split OFF
-constexpr uint8_t CIV_C_SPLIT_ON_READ[] 	= {2,0x0F,0x01};                 // read split ON
-constexpr uint8_t CIV_C_SPLIT_OFF_SEND[] 	= {2,0x0F,0x01};                 // set split OFF
-constexpr uint8_t CIV_C_SPLIT_ON_SEND[] 	= {2,0x0F,0x01};                 // Set split ON
-
-constexpr uint8_t CIV_C_RFGAIN[] 	    = {2,0x14,0x02};                 // send/read RF Gain
-constexpr uint8_t CIV_C_AFGAIN[] 	    = {2,0x14,0x01};                 // send/read AF Gain
-constexpr uint8_t CIV_C_RFPOWER[]     = {2,0x14,0x0A};                 // send/read selected bands RF power
-constexpr uint8_t CIV_C_S_MTR_LVL[]   = {2,0x15,0x02};                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
-
-constexpr uint8_t CIV_C_PREAMP[] 	    = {2,0x16,0x02};                 // send/read preamp 00 = OFF, 01 = ON
-constexpr uint8_t CIV_C_AGC[] 	      = {2,0x16,0x12};                 // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
-
-constexpr uint8_t CIV_C_CW_MSGS[] 	  = {1,0x17};                 // Send CW messages see page 17 of prog manual for char table
-
-constexpr uint8_t CIV_C_F_SEND[] 			= {1,0x00};                 // send operating frequency to all
-constexpr uint8_t CIV_C_F1_SEND[] 		= {1,0x05};                 // send operating frequency to one
-constexpr uint8_t CIV_C_F_READ[] 		  = {1,0x03};                 // read operating frequency
-
-constexpr uint8_t CIV_C_F26_READ[] 		= {2,0x26,0x00};                 // read selected VFO m data, filt
-constexpr uint8_t CIV_C_F26_SEND[] 		= {2,0x26,0x00};                 // send selected vfo mode, data, filter
-
-constexpr uint8_t CIV_C_F25A_SEND[]   = {2,0x25,0x00};  // read VFO A selected vfo freq, mode, data, filter
-constexpr uint8_t CIV_C_F25B_SEND[] 	= {2,0x25,0x01};  // read VFO B freq, mode, data, filter
-
-constexpr uint8_t CIV_C_BSTACK[] 	    = {2,0x1A,0x01};            // send/read BandStack contents - see page 19 of prog manual.  
-                                                                  // data byte 1 0xyy = Freq band code
-                                                                  // dat abyte 2 0xzz = register code 01, 02 or 03
-                                                                  // to read 432 band stack register 1 use 0x1A,0x01,0x02,0x01
-
-constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
-constexpr uint8_t CIV_C_MOD1_SEND[] 	= {1,0x06};                 // send Modulation Mode to one
-constexpr uint8_t CIV_C_MOD_USB_F1_SEND[] = {3,0x06,0x01,0x01};       // send USB Filter 1 
-constexpr uint8_t CIV_C_MOD_USB__SEND[] 	= {2,0x06,0x01};       // send USB Filter 1 
-constexpr uint8_t CIV_C_MOD_READ[] 	  = {1,0x04};               	// read Modulation Mode in use
-
-constexpr uint8_t CIV_C_MY_POSIT_READ[] = {2,0x23,0x00};          // read MMy Position
-
-constexpr uint8_t CIV_C_RF_POW[]      = {2,0x14,0x0A};            // send / read max RF power setting (0..255 == 0 .. 100%)
-
-constexpr uint8_t CIV_C_TRX_ON_OFF[]  = {1,0x18};                 // switch radio ON/OFF
-
-constexpr uint8_t CIV_C_TRX_ID[]      = {2,0x19,0x00};            // ID query
-
-constexpr uint8_t CIV_C_TX[]    			= {2,0x1C,0x00};            // query of TX-State 00=OFF, 01=ON
-
-// the following three commands don't fit for IC7100 !!!
-constexpr uint8_t CIV_C_DATE[]        = {4,0x1A,0x05,0x00,0x94};  // + 0x20 0x20 0x04 0x27 for 27.4.2020
-constexpr uint8_t CIV_C_TIME[]        = {4,0x1A,0x05,0x00,0x95};  // + 0x19 0x57 for 19:57
-constexpr uint8_t CIV_C_UTC[]         = {4,0x1A,0x05,0x00,0x96};  // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-constexpr uint8_t CIV_C_UTC_READ[]    = {2,0x1A,0x05};  // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-constexpr uint8_t CIV_C_UTC_SEND[]    = {4,0x1A,0x05,0x00,0x96};  // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-
+// Add new command to this list.  Then add array values to the structure below.  The row is the same as the enum value here.
+enum cmds {
+    CIV_C_F_SEND,
+    CIV_C_F1_SEND,
+    CIV_C_F_READ,
+    CIV_C_F26_READ,
+    CIV_C_F26A_READ,
+    CIV_C_F26_SEND,
+    CIV_C_F25A_SEND,
+    CIV_C_F25B_SEND,
+    CIV_C_MOD_READ,
+    CIV_C_MOD_SET,
+    CIV_C_MOD_SEND,
+    CIV_C_MOD1_SEND,
+    CIV_C_MOD_USB_F1_SEND,
+    CIV_C_MOD_USB_SEND,
+    CIV_C_USB_D0_F2_SEND, 
+    CIV_C_USB_D1_F2_SEND, 
+    CIV_C_LSB_D0_F2_SEND, 
+    CIV_C_LSB_D1_F2_SEND, 
+    CIV_C_FM_D1_F1_SEND, 
+    CIV_C_ATTN_READ,
+    CIV_C_ATTN_OFF,
+    CIV_C_ATTN_ON,
+    CIV_C_SPLIT_OFF_READ,
+    CIV_C_SPLIT_ON_READ,
+    CIV_C_SPLIT_OFF_SEND,
+    CIV_C_SPLIT_ON_SEND,
+    CIV_C_RFGAIN,
+    CIV_C_AFGAIN,
+    CIV_C_RFPOWER,
+    CIV_C_S_MTR_LVL,
+    CIV_C_PREAMP_READ,
+    CIV_C_PREAMP_OFF,
+    CIV_C_PREAMP_ON,
+    CIV_C_AGC,
+    CIV_C_CW_MSGS,
+    CIV_C_BSTACK,
+    CIV_C_MY_POSIT_READ,
+    CIV_C_MY_POSIT_DATA,
+    CIV_C_RF_POW,
+    CIV_C_TRX_ON_OFF,
+    CIV_C_TRX_ID,
+    CIV_C_TX,
+    CIV_C_DATE,
+    CIV_C_TIME,
+    CIV_C_UTC,
+    CIV_C_UTC_OFFSET,
+    CIV_C_UTC_SEND,
+    End_of_Cmd_List
+};
+struct cmdList {
+    cmds cmd;
+    uint8_t cmdData[6];
+};
 
 // the following commands will be used by the client
 constexpr uint8_t CIV_C_OK[]          = {1,0xFB};			// return OK  (no command/subcommand used in this case)
@@ -84,78 +75,8 @@ constexpr uint8_t CIV_C_NOK[]         = {1,0xFA};			// return NOK (no command/su
 
 constexpr uint8_t CIV_D_NIX[]         = {0,0x00};        // no data at all
 constexpr uint8_t CIV_D_ON[]          = {1,0x01};        // ON
-constexpr uint8_t CIV_D_OFF[]         = {1,0x00};        // OFF
+constexpr uint8_t CIV_D_OFF[]         = {1,0x00};      // OFF
 
-/*
-// ToDo:  Table of commands for message lookup
-enum cmd_lookup {
-    CIV_C_USB_D0_F2_SEND[] 			= {5,0x26,0x00,0x01,0x00,0x02};   // selected VFO; mod USB; Data OFF; RX_filter F2;
-    CIV_C_USB_D1_F2_SEND[] 			= {5,0x26,0x00,0x01,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
-    CIV_C_LSB_D0_F2_SEND[] 			= {5,0x26,0x00,0x00,0x00,0x02};   // selected VFO; mod USB; Data OFF; RX_filter F2;
-    CIV_C_LSB_D1_F2_SEND[] 			= {5,0x26,0x00,0x00,0x01,0x02};   // selected VFO; mod USB; Data ON; RX_filter F2;
-    CIV_C_FM_D1_F1_SEND[] 			= {5,0x26,0x00,0x05,0x01,0x01};   // selected VFO; mod USB; Data ON; RX_filter F2;
-
-};
-
-
-constexpr uint8_t CIV_C_MOD_SET[] 			      = {5,0x26,0x00,0x01,0x00,0x01};   // cmd 26; selected VFO; mode, data on/off(0-1), filter (1-3);
-
-constexpr uint8_t CIV_C_ATTN_OFF_READ[] 	= {2,0x11,0x00};                 // Atten OFF
-constexpr uint8_t CIV_C_ATTN_ON_READ[] 		= {2,0x11,0x01};                 // Atten 10dB (144, 432, 1200 bands only)
-constexpr uint8_t CIV_C_SPLIT_OFF_READ[] 	= {2,0x0F,0x00};                 // read Split OFF
-constexpr uint8_t CIV_C_SPLIT_ON_READ[] 	= {2,0x0F,0x01};                 // read split ON
-constexpr uint8_t CIV_C_SPLIT_OFF_SEND[] 	= {2,0x0F,0x01};                 // set split OFF
-constexpr uint8_t CIV_C_SPLIT_ON_SEND[] 	= {2,0x0F,0x01};                 // Set split ON
-
-constexpr uint8_t CIV_C_RFGAIN[] 	    = {2,0x14,0x02};                 // send/read RF Gain
-constexpr uint8_t CIV_C_AFGAIN[] 	    = {2,0x14,0x01};                 // send/read AF Gain
-constexpr uint8_t CIV_C_RFPOWER[]     = {2,0x14,0x0A};                 // send/read selected bands RF power
-constexpr uint8_t CIV_C_S_MTR_LVL[]   = {2,0x15,0x02};                 // send/read S-meter level (00 00 to 02 55)  00 00 = S0, 01 20 = S9, 02 41 = S9+60dB
-
-constexpr uint8_t CIV_C_PREAMP[] 	    = {2,0x16,0x02};                 // send/read preamp 00 = OFF, 01 = ON
-constexpr uint8_t CIV_C_AGC[] 	      = {2,0x16,0x12};                 // send/read AGC  01 = FAST, 02 = MID, 03 = SLOW
-
-constexpr uint8_t CIV_C_CW_MSGS[] 	  = {1,0x17};                 // Send CW messages see page 17 of prog manual for char table
-
-constexpr uint8_t CIV_C_F_SEND[] 			= {1,0x00};                 // send operating frequency to all
-constexpr uint8_t CIV_C_F1_SEND[] 		= {1,0x05};                 // send operating frequency to one
-constexpr uint8_t CIV_C_F_READ[] 		  = {1,0x03};                 // read operating frequency
-
-constexpr uint8_t CIV_C_F26_READ[] 		= {2,0x26,0x00};                 // read selected VFO m data, filt
-constexpr uint8_t CIV_C_F26_SEND[] 		= {2,0x26,0x00};                 // send selected vfo mode, data, filter
-
-constexpr uint8_t CIV_C_F25A_SEND[]   = {2,0x25,0x00};  // read VFO A selected vfo freq, mode, data, filter
-constexpr uint8_t CIV_C_F25B_SEND[] 	= {2,0x25,0x01};  // read VFO B freq, mode, data, filter
-
-constexpr uint8_t CIV_C_BSTACK[] 	    = {2,0x1A,0x01};            // send/read BandStack contents - see page 19 of prog manual.  
-                                                                  // data byte 1 0xyy = Freq band code
-                                                                  // dat abyte 2 0xzz = register code 01, 02 or 03
-                                                                  // to read 432 band stack register 1 use 0x1A,0x01,0x02,0x01
-
-constexpr uint8_t CIV_C_MOD_SEND[] 		= {1,0x01};                 // send Modulation Mode to all
-constexpr uint8_t CIV_C_MOD1_SEND[] 	= {1,0x06};                 // send Modulation Mode to one
-constexpr uint8_t CIV_C_MOD_USB_F1_SEND[] = {3,0x06,0x01,0x01};       // send USB Filter 1 
-constexpr uint8_t CIV_C_MOD_USB__SEND[] 	= {2,0x06,0x01};       // send USB Filter 1 
-constexpr uint8_t CIV_C_MOD_READ[] 	  = {1,0x04};               	// read Modulation Mode in use
-
-constexpr uint8_t CIV_C_MY_POSIT_READ[] = {2,0x23,0x00};          // read MMy Position
-
-constexpr uint8_t CIV_C_RF_POW[]      = {2,0x14,0x0A};            // send / read max RF power setting (0..255 == 0 .. 100%)
-
-constexpr uint8_t CIV_C_TRX_ON_OFF[]  = {1,0x18};                 // switch radio ON/OFF
-
-constexpr uint8_t CIV_C_TRX_ID[]      = {2,0x19,0x00};            // ID query
-
-constexpr uint8_t CIV_C_TX[]    			= {2,0x1C,0x00};            // query of TX-State 00=OFF, 01=ON
-
-// the following three commands don't fit for IC7100 !!!
-constexpr uint8_t CIV_C_DATE[]        = {4,0x1A,0x05,0x00,0x94};  // + 0x20 0x20 0x04 0x27 for 27.4.2020
-constexpr uint8_t CIV_C_TIME[]        = {4,0x1A,0x05,0x00,0x95};  // + 0x19 0x57 for 19:57
-constexpr uint8_t CIV_C_UTC[]         = {4,0x1A,0x05,0x00,0x96};  // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-constexpr uint8_t CIV_C_UTC_READ[]    = {2,0x1A,0x05};  // + 0x01,0x00,0x00 = +1h delta of UTC to MEZ
-constexpr uint8_t CIV_C_UTC_SEND[]    = {4,0x1A,0x05,0x00,0x96};  /
-
-*/
 // definition of command sequences to switch from "Data" mode (e.g.FT8) to "Voice" Mode (e.g. USB)
 
 // ICOM has implemented such a mode switch in the meantime by a new SW version (IC705, IC7300, IC9700)
