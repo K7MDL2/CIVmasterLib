@@ -506,7 +506,7 @@ CIVresult_t CIV::writeMsg (const uint8_t deviceAddr, const uint8_t cmd_body[], c
 void CIV::logClear() {
   #ifdef log_CIV
 		uint8_t idx;
-		for (idx=0; idx<logMaxEntries-1;idx++) { // clear all buffer entries
+		for (idx=0; idx<logMaxEntries;idx++) { // clear all buffer entries
 			logBuffer[idx][0]=0;
 			logBufferName[idx][0]='\0';
 		}
