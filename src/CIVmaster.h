@@ -24,7 +24,7 @@
 // Requires access to the serial line,i.e. Serial communication via USB
 // has to be initialized in the main program
 
-#define log_CIV           // switch on logging (command-structured, in and out)
+//#define log_CIV           // switch on logging (command-structured, in and out)
 															// ringbuffer
 															
 //  #define debugWithoutRadio // if defined, no reaction of a radio is expected
@@ -213,8 +213,6 @@ public:
 																							// pairing every time you change this name - otherwise you won't see 
 																							// this change in the IC705!
 
-
-
 //::::::::::::: make the CIV address in use known to CIV
 	void		registerAddr(const uint8_t deviceAddr);
 
@@ -223,6 +221,9 @@ public:
 
 //::::::::::::: is a specific address known to CIV ?
 	bool 		isAddrKnown(const uint8_t deviceAddr);
+
+//:::::::::::::  set the USB serial DTR level high or low
+	void 		SetDTR(bool state);
 
 
 	//::::::::::::: 

@@ -731,7 +731,17 @@ if (PC_CAT_port.available() > 0 )
     }
 }
 
-// This shoudl be done in teh readmsgraw function so that the band decoder wont miss anything or vs.
+void CIV::SetDTR(bool state)
+{
+	CIV_SERIAL.setDTR(state);  // Drop DTR
+}
+
+//void CIV::GetDTR(bool state)
+//{
+	//CIV_SERIAL.dtr_rts_();  // Drop DTR
+//}
+
+// This should be done in the readmsgraw function so that the band decoder wont miss anything or vs.
 //void CIV::pass_CAT_msg_to_PC(void)
 //{
 //if (CIV_SERIAL.available() > 0 )
