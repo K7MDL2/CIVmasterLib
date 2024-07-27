@@ -63,8 +63,16 @@ enum cmds {
     CIV_C_UTC,
     CIV_C_UTC_OFFSET,
     CIV_C_UTC_SEND,
+    CIV_C_DUPLEX_READ,
+    CIV_C_DUPLEX_SEND,
+    CIV_C_RIT_XIT,
+    CIV_C_RIT_ON_OFF,
+    CIV_C_XIT_ON_OFF,
+    CIV_C_RADIO_OFF,
+    CIV_C_RADIO_ON,
     End_of_Cmd_List
 };
+
 struct cmdList {
     cmds cmd;
     uint8_t cmdData[6];

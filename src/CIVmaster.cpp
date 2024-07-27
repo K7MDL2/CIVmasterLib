@@ -52,13 +52,13 @@ CIV::CIV()
 	//USBSerial userial1(myusb);  // works only for those Serial devices who transfer <=64 bytes (like T3.x, FTDI...)
 	//USBSerial_BigBuffer userial(myusb, 1); // Handles anything up to 512 bytes
 	USBSerial_BigBuffer CIV_SERIAL(myusb, 1); // Handles anything up to 512 bytes
-	USBSerial_BigBuffer userial1(myusb, 1); // Handles anything up to 512 bytes
+	USBSerial_BigBuffer GPS_SERIAL(myusb, 1); // Handles anything up to 512 bytes
 	//USBSerial_BigBuffer userial(myusb); // Handles up to 512 but by default only for those > 64 bytes
 	//USBSerial_BigBuffer userial1(myusb); // Handles up to 512 but by default only for those > 64 bytes
 
-	USBDriver *drivers[] = {&hub1, &hub2, &hid1, &hid2, &CIV_SERIAL, &userial1};
+	USBDriver *drivers[] = {&hub1, &hub2, &hid1, &hid2, &CIV_SERIAL, &GPS_SERIAL};
 	
-	const char * driver_names[CNT_DEVICES] = {"Hub1", "Hub2",  "HID1", "HID2", "CIV_SERIAL", "USERIAL1" };
+	const char * driver_names[CNT_DEVICES] = {"Hub1", "Hub2",  "HID1", "HID2", "CIV_SERIAL", "GPS_SERIAL" };
 	bool driver_active[CNT_DEVICES] = {false, false, false, false};
 
 //::::::::: initialize the HW /Interfaces
@@ -369,14 +369,14 @@ CIVresult_t CIV::readMsgRaw() {
       }
     }
   
-    if ((DstopIdx-DstartIdx) > 3 && (DstopIdx-DstartIdx) < 6){                         // 5 byte data -> first byte is of lowest order
-      for (idx = DstartIdx; idx <= DstopIdx; idx++) {
-        CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
-        CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;
-      }
-    }
+    //if ((DstopIdx-DstartIdx) > 3 && (DstopIdx-DstartIdx) < 6){                         // 5 byte data -> first byte is of lowest order
+    //  for (idx = DstartIdx; idx <= DstopIdx; idx++) {
+    //    CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
+    //    CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;
+    //  }
+    //}
 
-	if ((DstopIdx-DstartIdx) > 5){                         // 6 byte data -> first byte is of lowest order - for 905 10G and up bands
+	if ((DstopIdx-DstartIdx) > 2){                         // 6 byte data -> first byte is of lowest order - for 905 10G and up bands
       for (idx = DstartIdx; idx <= DstopIdx; idx++) {
         CIVresultL.value += (rxBuffer[idx] & 0x0f) * mul; mul *= 10;
         CIVresultL.value += (rxBuffer[idx] >> 4) * mul; mul *= 10;
@@ -682,10 +682,10 @@ void CIV::refresh_myUSB(void)
                     // Lets try first outputting something to our USerial to see if it will go out...
                     CIV_SERIAL.begin(USBBAUD);
                 }
-                if (drivers[i] == &userial1) 
+                if (drivers[i] == &GPS_SERIAL) 
                 {
                     // Lets try first outputting something to our USerial to see if it will go out...
-                    userial1.begin(9600);
+                    GPS_SERIAL.begin(9600);
                 }
             }
         }
@@ -712,9 +712,9 @@ void CIV::readGPS(void)
 {
     byte incomingByte_1 = 0;
     // read the 905 GPS data on the 2nd virtual serial USB Host interface and pass it through to the PC at 9600baud
-    while (userial1.available() > 0) 
+    while (GPS_SERIAL.available() > 0) 
     {
-      incomingByte_1 = userial1.read();   // read from USB Hos port RADIO GPS data 
+      incomingByte_1 = GPS_SERIAL.read();   // read from USB Hos port RADIO GPS data 
       PC_GPS_port.write(incomingByte_1);  // Pass thru to PC side
       //PC_Debug_port.print("GPS: ");
       //PC_Debug_port.printf("%c",incomingByte_1);
@@ -736,10 +736,6 @@ void CIV::SetDTR(bool state)
 	CIV_SERIAL.setDTR(state);  // Drop DTR
 }
 
-//void CIV::GetDTR(bool state)
-//{
-	//CIV_SERIAL.dtr_rts_();  // Drop DTR
-//}
 
 // This should be done in the readmsgraw function so that the band decoder wont miss anything or vs.
 //void CIV::pass_CAT_msg_to_PC(void)
